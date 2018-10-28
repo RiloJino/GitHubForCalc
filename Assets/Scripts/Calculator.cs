@@ -13,7 +13,7 @@ public class Calculator : MonoBehaviour {
 	public void ButtonPressed()
     {
 		buttonValue = EventSystem.current.currentSelectedGameObject.name;
-		inputText.text = buttonValue;
+		inputText.text += buttonValue;
     }
 
     // Use this for initialization
