@@ -8,26 +8,137 @@ public class Calculator : MonoBehaviour {
 
 	[SerializeField]
 	Text inputText;
-	[SerializeField]
-	Text previousAnswerField;
-	private string infix = "4^2*3-3+8/4/(1+1)";
+	private string infix = "";
 	private bool oldAnswer = false;
+	private bool operatorPressed = false;
+	private bool openBracket = false;
 
 	public void ButtonPressed()
     {
+		if (infix == "Invalid") {
+			inputText.text = "";
+			infix = "";
+		}
 		string buttonValue = EventSystem.current.currentSelectedGameObject.name;
 		if (buttonValue == "=") {
-			Stack <string> postFix = infixToPostfix (infix);
-			inputText.text = calculate(postFix);
+			if (bracketMiss (infix)) {
+
+			} else {
+				Stack <string> postFix = infixToPostfix (infix);
+				if (infix.Contains ("Infinity")) {
+					infix = "Invalid";
+					inputText.text = "Invalid";
+				} else {
+					string answer = calculate (postFix);
+					inputText.text = answer;
+					infix = answer;
+					operatorPressed = false;
+					oldAnswer = true;
+				}
+			}
 		} else if (buttonValue == "C") {
 			inputText.text = "";
 			infix = "";
+			operatorPressed = false;
+			openBracket = false;
 		} else {
-			inputText.text += buttonValue;
-			infix += buttonValue;
+			if (infix == "") {
+				if ("+*/^)".IndexOf (buttonValue) >= 0) {
+					infix = "Invalid";
+					inputText.text = "Invalid";
+				} else if (buttonValue == "." || buttonValue == "-") {
+					inputText.text += "0" + buttonValue;
+					infix += "0" + buttonValue;
+					operatorPressed = true;
+				} else if (buttonValue == "(") {
+					inputText.text += buttonValue;
+					infix += buttonValue;
+					operatorPressed = true;
+					openBracket = true;
+				} else {
+					inputText.text += buttonValue;
+					infix += buttonValue;
+				}
+			} else if (operatorPressed) {
+				if ("+-*/^.".IndexOf (buttonValue) >= 0) {
+					infix = "Invalid";
+					inputText.text = "Invalid";
+				} else if (infix [infix.Length - 1].Equals ('(')) {
+					if (buttonValue == ")") {
+						inputText.text = inputText.text.Substring (0, infix.Length - 1);
+						infix = infix.Substring (0, infix.Length - 1);
+						buttonValue = null;
+					} else {
+						inputText.text += buttonValue;
+						infix += buttonValue;
+						operatorPressed = false;
+						openBracket = false;
+					}
+				} else if (buttonValue == "(") {
+					inputText.text += buttonValue;
+					infix += buttonValue;
+					operatorPressed = true;
+					openBracket = true;
+
+				} else {
+					inputText.text += buttonValue;
+					infix += buttonValue;
+					operatorPressed = false;
+					openBracket = false;
+				}
+			} else {
+				if ("+-*/^.".IndexOf (buttonValue) >= 0) {
+					inputText.text += buttonValue;
+					infix += buttonValue;
+					operatorPressed = true;
+				} else if(buttonValue == "("){
+					inputText.text += buttonValue;
+					infix += buttonValue;
+					operatorPressed = true;
+					openBracket = true;
+				}else{
+					if (oldAnswer) {
+						if (buttonValue == ")" && !openBracket) {
+
+						} else if (buttonValue != null) {
+							inputText.text += "+" + buttonValue;
+							infix += "+" + buttonValue;
+							operatorPressed = false;
+						} else if (buttonValue == "(") {
+
+						}
+					} else {
+						if (buttonValue == ")" && !openBracket) {
+
+						} else if (buttonValue != null) {
+							inputText.text += buttonValue;
+							infix += buttonValue;
+							operatorPressed = false;
+						}
+					}
+				}
+
+			}
 		}
 			
     }
+
+	private bool bracketMiss(string possibleInfix){
+		int open = 0;
+		int close = 0;
+		for (int i = 0; i < possibleInfix.Length; i++) {
+			if (possibleInfix [i] == '(') {
+				open++;
+			} else if (possibleInfix [i] == ')') {
+				close++;
+			}
+		}
+		if(open == close){
+		return true;
+		}
+		return false;
+	}
+
 
 	private Stack <string> infixToPostfix(string infix)
 	{
@@ -42,7 +153,6 @@ public class Calculator : MonoBehaviour {
 				number += currentElement;
 			} else if ("+-*/^.".IndexOf (currentElement) >= 0) {
 				if (number.Length > 0 && currentElement != '.') {
-					Debug.Log(number);
 					postStack.Push (number);
 					number = "";
 				} else if (currentElement == '-' && i == 0) {
@@ -67,7 +177,6 @@ public class Calculator : MonoBehaviour {
 				}
 			} else if (currentElement == ')') {
 				if (number.Length > 0) {
-					Debug.Log(number);
 					postStack.Push (number);
 					number = "";
 				}
@@ -80,15 +189,18 @@ public class Calculator : MonoBehaviour {
 				}
 			}
 		}
+		if (number.Length > 0) {
+			postStack.Push (number);
+			number = "";
+		}
 		while(operatorStack.Peek () != "B") {
 			postStack.Push (operatorStack.Pop ());
 		}
-
-		Stack <string> answer = new Stack <string> ();
 		while (postStack.Count > 0) {
-			answer.Push (postStack.Pop ());
+			Debug.Log (postStack.Peek ());
+			operatorStack.Push (postStack.Pop ());
 		}
-		return answer;
+		return operatorStack;
 	}
 
 	private bool compareOperators(string operator1, string operator2){
@@ -129,24 +241,21 @@ public class Calculator : MonoBehaviour {
 					double secondNumber = numbers.Pop();
 					double firstNumber = numbers.Pop();
 					numbers.Push (firstNumber + secondNumber);
-					Debug.Log (firstNumber + " + " + secondNumber + " = " + numbers.Peek ());
+
 				}else if (currentElement [0] == '-') {
 					double secondNumber = numbers.Pop();
 					double firstNumber = numbers.Pop();
 					numbers.Push (firstNumber - secondNumber);
-					Debug.Log (firstNumber + " -- " + secondNumber + " = " + numbers.Peek ());
 
 				}else if (currentElement [0] == '/') {
 					double secondNumber = numbers.Pop();
 					double firstNumber = numbers.Pop();
 					numbers.Push (firstNumber / secondNumber);
-					Debug.Log (firstNumber + " / " + secondNumber + " = " + numbers.Peek ());
 
 				}else if (currentElement [0] == '*') {
 					double secondNumber = numbers.Pop();
 					double firstNumber = numbers.Pop();
 					numbers.Push (firstNumber * secondNumber);
-					Debug.Log (firstNumber + " * " + secondNumber + " = " + numbers.Peek ());
 
 				}else if (currentElement [0] == '^') {
 					double secondNumber = numbers.Pop();
@@ -156,10 +265,10 @@ public class Calculator : MonoBehaviour {
 						answer = answer * firstNumber;
 					}
 					numbers.Push (answer);
-					Debug.Log (firstNumber + " ^ " + secondNumber + " = " + numbers.Peek ());
 				}
 			}
 		}
+		Debug.Log ("Done");
 		return Convert.ToString(numbers.Pop());
 	}
 }
