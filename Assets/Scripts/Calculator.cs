@@ -21,9 +21,12 @@ public class Calculator : MonoBehaviour {
 		}
 		string buttonValue = EventSystem.current.currentSelectedGameObject.name;
 		if (buttonValue == "=") {
-			if (bracketMiss (infix)) {
-
-			} else {
+			if (!bracketMiss (infix)) {
+				
+			} else if (operatorPressed) {
+				infix = "Invalid";
+				inputText.text = "Invalid";
+			}else {
 				Stack <string> postFix = infixToPostfix (infix);
 				if (infix.Contains ("Infinity")) {
 					infix = "Invalid";
