@@ -1,8 +1,24 @@
-﻿using System;
+﻿/*  Created By Parker Jones
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ */
+
+
+
+
+
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+
 
 public class Calculator : MonoBehaviour {
 
@@ -12,27 +28,36 @@ public class Calculator : MonoBehaviour {
 	private bool oldAnswer = false;
 	private bool operatorPressed = false;
 	private bool openBracket = false;
+    private bool automaticTimes = false;
 
 	public void ButtonPressed()
     {
-		if (infix == "Invalid") {
-			inputText.text = "";
-			infix = "";
-		}
-		string buttonValue = EventSystem.current.currentSelectedGameObject.name;
-		if (buttonValue == "=") {
-			if (!bracketMiss (infix)) {
-				
-			} else if (operatorPressed) {
+		if (infix.Contains("Invalid")) {
+            inputText.text = "";
+            infix = "";
+            operatorPressed = false;
+            openBracket = false;
+            oldAnswer = false;
+        }
+        string buttonValue = EventSystem.current.currentSelectedGameObject.name;
+        if (buttonValue == "=" && infix != "") {
+            if(infix[infix.Length-1] == '.') {
+                inputText.text = inputText.text.Substring(0, infix.Length - 1);
+                infix = infix.Substring(0, infix.Length - 1);
+            }
+            if (!BracketMiss(infix)) {
+                infix = "Invalid";
+                inputText.text = "Invalid";
+            } else if (operatorPressed) {
 				infix = "Invalid";
 				inputText.text = "Invalid";
 			}else {
-				Stack <string> postFix = infixToPostfix (infix);
+				Stack <string> postFix = InfixToPostfix (infix);
 				if (infix.Contains ("Infinity")) {
 					infix = "Invalid";
 					inputText.text = "Invalid";
 				} else {
-					string answer = calculate (postFix);
+					string answer = Calculate (postFix);
 					inputText.text = answer;
 					infix = answer;
 					operatorPressed = false;
@@ -44,6 +69,8 @@ public class Calculator : MonoBehaviour {
 			infix = "";
 			operatorPressed = false;
 			openBracket = false;
+            oldAnswer = false;
+
 		} else {
 			if (infix == "") {
 				if ("+*/^)".IndexOf (buttonValue) >= 0) {
@@ -59,62 +86,156 @@ public class Calculator : MonoBehaviour {
 					operatorPressed = true;
 					openBracket = true;
 				} else {
-					inputText.text += buttonValue;
-					infix += buttonValue;
+                    if (buttonValue == "="){
+
+                    }else{
+                        inputText.text += buttonValue;
+                        infix += buttonValue;
+                    }
 				}
 			} else if (operatorPressed) {
-				if ("+-*/^.".IndexOf (buttonValue) >= 0) {
-					infix = "Invalid";
-					inputText.text = "Invalid";
-				} else if (infix [infix.Length - 1].Equals ('(')) {
-					if (buttonValue == ")") {
-						inputText.text = inputText.text.Substring (0, infix.Length - 1);
-						infix = infix.Substring (0, infix.Length - 1);
-						buttonValue = null;
-					} else {
-						inputText.text += buttonValue;
-						infix += buttonValue;
-						operatorPressed = false;
-						openBracket = false;
-					}
-				} else if (buttonValue == "(") {
-					inputText.text += buttonValue;
-					infix += buttonValue;
-					operatorPressed = true;
-					openBracket = true;
+                if ("+-*/^.".IndexOf(buttonValue) >= 0)
+                {
+                    if(infix[infix.Length-1] == '.')
+                    {
+                        inputText.text += "0";
+                        infix += "0";
+                    }
+                    if(infix[infix.Length - 1].Equals('(') && buttonValue == "-")
+                    {
+                        inputText.text += "0" + buttonValue;
+                        infix += "0" + buttonValue;
+                    }
+                }
+                else if (infix[infix.Length - 1].Equals('('))
+                {
+                    if (buttonValue == ")")
+                    {
+                        if (infix.Length > 1) {
+                        inputText.text = inputText.text.Substring(0, infix.Length - 2);
+                        infix = infix.Substring(0, infix.Length - 2);
+                        }
+                        else
+                        {
+                            inputText.text = inputText.text.Substring(0, infix.Length - 1);
+                            infix = infix.Substring(0, infix.Length - 1);
+                        }
+                        if (infix.Length > 0)
+                        {
+                            if ("-*/^.(".IndexOf(infix[infix.Length - 1]) >= 0)
+                            {
+                                operatorPressed = true;
 
-				} else {
+                            }
+                            else
+                            {
+                                if(infix[infix.Length - 1] == '*' && automaticTimes)
+                                {
+                                    inputText.text = inputText.text.Substring(0, infix.Length - 1);
+                                    infix = infix.Substring(0, infix.Length - 1);
+                                    oldAnswer = true;
+                                }
+                                operatorPressed = false;
+                            }
+                        }
+                        else
+                        {
+                            infix = "";
+                            inputText.text = "";
+                            operatorPressed = false;
+                            openBracket = false;
+                        }
+                        buttonValue = null;
+                    }
+                    else
+                    {
+                        inputText.text += buttonValue;
+                        infix += buttonValue;
+                        operatorPressed = false;
+                        openBracket = false;
+                    }
+                }
+                else if (buttonValue == "(")
+                {
+                    inputText.text += buttonValue;
+                    infix += buttonValue;
+                    operatorPressed = true;
+                    openBracket = true;
+                }
+                else if (buttonValue == ")")
+                {
+                    inputText.text += buttonValue;
+                    infix += buttonValue;
+                    openBracket = false;
+                }
+                else
+                {
 					inputText.text += buttonValue;
 					infix += buttonValue;
 					operatorPressed = false;
-					openBracket = false;
 				}
 			} else {
-				if ("+-*/^.".IndexOf (buttonValue) >= 0) {
-					inputText.text += buttonValue;
+				if ("+-*/^".IndexOf (buttonValue) >= 0) {
+                    if (infix[infix.Length - 1] == '.')
+                    {
+                        inputText.text += "0";
+                        infix += "0";
+                    }
+                    inputText.text += buttonValue;
 					infix += buttonValue;
 					operatorPressed = true;
-				} else if(buttonValue == "("){
-					inputText.text += buttonValue;
-					infix += buttonValue;
-					operatorPressed = true;
-					openBracket = true;
-				}else{
+                    oldAnswer = false;
+                }else{
 					if (oldAnswer) {
 						if (buttonValue == ")" && !openBracket) {
 
 						} else if (buttonValue != null) {
-							inputText.text += "+" + buttonValue;
-							infix += "+" + buttonValue;
-							operatorPressed = false;
-						} else if (buttonValue == "(") {
-
+							
+                            if (buttonValue == "(")
+                            {
+                                if (infix[infix.Length - 1] == '.')
+                                {
+                                    inputText.text += "0";
+                                    infix += "0";
+                                }
+                                inputText.text += "*" + buttonValue;
+                                infix += "*" + buttonValue;
+                                automaticTimes = true;
+                                openBracket = true;
+                                operatorPressed = true;
+                            }
+                            else
+                            {
+                                if (buttonValue != ".")
+                                {
+                                    if (infix[infix.Length - 1] == '.')
+                                    {
+                                        inputText.text += "0";
+                                        infix += "0";
+                                    }
+                                    inputText.text += "+" + buttonValue;
+                                    infix += "+" + buttonValue;
+                                    operatorPressed = false;
+                                }
+                            }
+                            oldAnswer = false;
 						}
 					} else {
-						if (buttonValue == ")" && !openBracket) {
-
-						} else if (buttonValue != null) {
-							inputText.text += buttonValue;
+                        if (buttonValue == "(")
+                        {
+                            if (infix[infix.Length - 1] == '.')
+                            {
+                                inputText.text += "0";
+                                infix += "0";
+                            }
+                            inputText.text += "*" + buttonValue;
+                            infix += "*" + buttonValue;
+                            automaticTimes = true;
+                            openBracket = true;
+                            operatorPressed = true;
+                        }
+                        else if (buttonValue != null) {
+                            inputText.text += buttonValue;
 							infix += buttonValue;
 							operatorPressed = false;
 						}
@@ -126,7 +247,7 @@ public class Calculator : MonoBehaviour {
 			
     }
 
-	private bool bracketMiss(string possibleInfix){
+	private bool BracketMiss(string possibleInfix){
 		int open = 0;
 		int close = 0;
 		for (int i = 0; i < possibleInfix.Length; i++) {
@@ -143,7 +264,7 @@ public class Calculator : MonoBehaviour {
 	}
 
 
-	private Stack <string> infixToPostfix(string infix)
+	private Stack <string> InfixToPostfix(string infix)
 	{
 		Stack <string> postStack = new Stack <string> ();
 		Stack <string> operatorStack = new Stack <string> ();
@@ -156,16 +277,23 @@ public class Calculator : MonoBehaviour {
 				number += currentElement;
 			} else if ("+-*/^.".IndexOf (currentElement) >= 0) {
 				if (number.Length > 0 && currentElement != '.') {
-					postStack.Push (number);
+                    if (number[number.Length-1] == '.')
+                    {
+                        number += "0";
+                    }
+                    postStack.Push (number);
 					number = "";
 				} else if (currentElement == '-' && i == 0) {
 					postStack.Push ("0");
 				} else if (currentElement == '.') {
-					number += currentElement;
+                    if (!number.Contains("."))
+                    {
+                        number += currentElement;
+                    }
 				}
 				if (operatorStack.Peek() == "B") {
 					operatorStack.Push (currentElement.ToString());
-				} else if (compareOperators (operatorStack.Peek (), currentElement.ToString())) {
+				} else if (CompareOperators (operatorStack.Peek (), currentElement.ToString())) {
 					postStack.Push (operatorStack.Pop ());
 					operatorStack.Push (currentElement.ToString());
 				} else {
@@ -174,7 +302,6 @@ public class Calculator : MonoBehaviour {
 			} else if (currentElement == '(') {
 				operatorStack.Push (currentElement.ToString());
 				if (number.Length > 0) {
-					Debug.Log(number);
 					postStack.Push (number);
 					number = "";
 				}
@@ -186,8 +313,8 @@ public class Calculator : MonoBehaviour {
 				while (operatorStack.Peek() != "B" && operatorStack.Peek () != "(") {
 					postStack.Push (operatorStack.Pop ());
 				}if (operatorStack.Peek() == "B") {
-					Debug.Log ("error");
-				} else {
+
+                } else {
 					operatorStack.Pop ();
 				}
 			}
@@ -200,18 +327,17 @@ public class Calculator : MonoBehaviour {
 			postStack.Push (operatorStack.Pop ());
 		}
 		while (postStack.Count > 0) {
-			Debug.Log (postStack.Peek ());
 			operatorStack.Push (postStack.Pop ());
 		}
 		return operatorStack;
 	}
 
-	private bool compareOperators(string operator1, string operator2){
+	private bool CompareOperators(string operator1, string operator2){
 		if(operator1 == "^" && operator2 == "^"){
 			return false;
 		}
-		int oper1 = operatorOrder(operator1);
-		int oper2 = operatorOrder(operator2);
+		int oper1 = OperatorOrder(operator1);
+		int oper2 = OperatorOrder(operator2);
 		if (oper1 >= oper2) {
 			return true;
 		}else{
@@ -219,7 +345,7 @@ public class Calculator : MonoBehaviour {
 		}
 	}
 
-	private int operatorOrder(string oper){
+	private int OperatorOrder(string oper){
 		if (oper == "+" || oper == "-") {
 			return 1;
 		}
@@ -232,46 +358,64 @@ public class Calculator : MonoBehaviour {
 		return 0;
 	}
 
-	private string calculate(Stack <string> postFix)
+	private string Calculate(Stack <string> postFix)
 	{
-		Stack <double> numbers = new Stack<double> ();
+        Stack <float> numbers = new Stack<float> ();
 		while(postFix.Count > 0){
+
 			string currentElement = postFix.Pop ();
-			if ('0' <= currentElement [0] && currentElement [0] <= '9') {				
-				numbers.Push (Convert.ToDouble(currentElement));
+            if ('0' <= currentElement[0] && currentElement[0] <= '9') {
+                numbers.Push(float.Parse(currentElement));
 			} else {
 				if (currentElement [0] == '+') {
-					double secondNumber = numbers.Pop();
-					double firstNumber = numbers.Pop();
+                    float secondNumber = numbers.Pop();
+                    float firstNumber = numbers.Pop();
 					numbers.Push (firstNumber + secondNumber);
 
 				}else if (currentElement [0] == '-') {
-					double secondNumber = numbers.Pop();
-					double firstNumber = numbers.Pop();
+                    float secondNumber = numbers.Pop();
+                    float firstNumber = numbers.Pop();
 					numbers.Push (firstNumber - secondNumber);
 
 				}else if (currentElement [0] == '/') {
-					double secondNumber = numbers.Pop();
-					double firstNumber = numbers.Pop();
+                    float secondNumber = numbers.Pop();
+                    float firstNumber = numbers.Pop();
 					numbers.Push (firstNumber / secondNumber);
 
 				}else if (currentElement [0] == '*') {
-					double secondNumber = numbers.Pop();
-					double firstNumber = numbers.Pop();
+                    float secondNumber = numbers.Pop();
+                    float firstNumber = numbers.Pop();
 					numbers.Push (firstNumber * secondNumber);
 
 				}else if (currentElement [0] == '^') {
-					double secondNumber = numbers.Pop();
-					double firstNumber = numbers.Pop();
-					double answer = 1;
-					for(int j = 0; j < secondNumber; j++){
-						answer = answer * firstNumber;
-					}
-					numbers.Push (answer);
+                    float secondNumber = numbers.Pop();
+                    float firstNumber = numbers.Pop();
+                    float answer = 1;
+                    if (secondNumber < 54)
+                    {
+                        if (secondNumber >= 0)
+                        {
+                            for (int j = 0; j < secondNumber; j++)
+                            {
+                                answer = answer * firstNumber;
+                            }
+                        }
+                        else
+                        {
+                            for (float j = secondNumber; j < 0; j++)
+                            {
+                                answer = answer / firstNumber;
+                            }
+                        }
+                        numbers.Push(answer);
+                    }
+                    else
+                    {
+                        return "Invalid: number too large";
+                    }
 				}
 			}
 		}
-		Debug.Log ("Done");
 		return Convert.ToString(numbers.Pop());
 	}
 }
