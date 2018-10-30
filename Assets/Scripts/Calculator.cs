@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -8,8 +8,11 @@ public class Calculator : MonoBehaviour {
 
 	[SerializeField]
 	Text inputText;
+	[SerializeField]
+	Text previousAnswerField;
 	private string infix = "4^2*3-3+8/4/(1+1)";
 	private bool oldAnswer = false;
+
 	public void ButtonPressed()
     {
 		string buttonValue = EventSystem.current.currentSelectedGameObject.name;
@@ -80,7 +83,12 @@ public class Calculator : MonoBehaviour {
 		while(operatorStack.Peek () != "B") {
 			postStack.Push (operatorStack.Pop ());
 		}
-		return postStack;
+
+		Stack <string> answer = new Stack <string> ();
+		while (postStack.Count > 0) {
+			answer.Push (postStack.Pop ());
+		}
+		return answer;
 	}
 
 	private bool compareOperators(string operator1, string operator2){
@@ -108,13 +116,50 @@ public class Calculator : MonoBehaviour {
 		}
 		return 0;
 	}
+
 	private string calculate(Stack <string> postFix)
 	{
+		Stack <double> numbers = new Stack<double> ();
+		while(postFix.Count > 0){
+			string currentElement = postFix.Pop ();
+			if ('0' <= currentElement [0] && currentElement [0] <= '9') {				
+				numbers.Push (Convert.ToDouble(currentElement));
+			} else {
+				if (currentElement [0] == '+') {
+					double secondNumber = numbers.Pop();
+					double firstNumber = numbers.Pop();
+					numbers.Push (firstNumber + secondNumber);
+					Debug.Log (firstNumber + " + " + secondNumber + " = " + numbers.Peek ());
+				}else if (currentElement [0] == '-') {
+					double secondNumber = numbers.Pop();
+					double firstNumber = numbers.Pop();
+					numbers.Push (firstNumber - secondNumber);
+					Debug.Log (firstNumber + " -- " + secondNumber + " = " + numbers.Peek ());
 
-		string answer = "";
-		while(postFix.Count > 0) {
-			answer += postFix.Pop ();
+				}else if (currentElement [0] == '/') {
+					double secondNumber = numbers.Pop();
+					double firstNumber = numbers.Pop();
+					numbers.Push (firstNumber / secondNumber);
+					Debug.Log (firstNumber + " / " + secondNumber + " = " + numbers.Peek ());
+
+				}else if (currentElement [0] == '*') {
+					double secondNumber = numbers.Pop();
+					double firstNumber = numbers.Pop();
+					numbers.Push (firstNumber * secondNumber);
+					Debug.Log (firstNumber + " * " + secondNumber + " = " + numbers.Peek ());
+
+				}else if (currentElement [0] == '^') {
+					double secondNumber = numbers.Pop();
+					double firstNumber = numbers.Pop();
+					double answer = 1;
+					for(int j = 0; j < secondNumber; j++){
+						answer = answer * firstNumber;
+					}
+					numbers.Push (answer);
+					Debug.Log (firstNumber + " ^ " + secondNumber + " = " + numbers.Peek ());
+				}
+			}
 		}
-		return answer;
+		return Convert.ToString(numbers.Pop());
 	}
 }
