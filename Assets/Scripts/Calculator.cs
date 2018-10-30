@@ -8,13 +8,25 @@ public class Calculator : MonoBehaviour {
 
 	[SerializeField]
 	Text inputText;
-	string buttonValue;
+	string postfix = "";
 
 	public void ButtonPressed()
     {
-		buttonValue = EventSystem.current.currentSelectedGameObject.name;
-		inputText.text += buttonValue;
+		string buttonValue = EventSystem.current.currentSelectedGameObject.name;
+		if (buttonValue [0] == '=') {
+			inputText.text = calculate (postfix);
+		} else if (buttonValue [0] == 'C') {
+			inputText.text = "";
+		} else {
+			inputText.text += buttonValue;
+		}
+			
     }
+
+	public string calculate(string postfix)
+	{
+		return "Answer";
+	}
 
     // Use this for initialization
     void Start () {
