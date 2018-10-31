@@ -1,17 +1,7 @@
-﻿/*  Created By Parker Jones
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
+﻿/* Created By Parker Jones
+ * 10/26/2018
+ * I pledge that I have neither given nor received help from anyone other than the instructor for all  program  components  included  here!
  */
-
-
-
-
 
 using System;
 using System.Collections.Generic;
@@ -22,16 +12,26 @@ using UnityEngine.UI;
 
 public class Calculator : MonoBehaviour {
 
+    //inputText is linked to output text field
 	[SerializeField]
 	Text inputText;
+    //used as a copy of inputText for ease of formatting
 	private string infix = "";
+    //oldAnswer = true means there's a previous answer already in the inputText
 	private bool oldAnswer = false;
-	private bool operatorPressed = false;
+    //operatorPressed = true means the last button sucessfully entered was
+    private bool operatorPressed = false;
+    //openBracket = true means there's a "(" earlier in the inputText.text field that hasn't been closed
 	private bool openBracket = false;
+    //automaticTimes = true means a "(" was placed without a previous operator statment, 
     private bool automaticTimes = false;
 
-	public void ButtonPressed()
-    {
+    /*ButtonPressed is call by UI buttons.
+	* Possible button values { "(", ")", "/", "*", "^", "+", "-", ".", "=", "C", "0", "9", "8", "7", "6", "5", "4", "3", "2", "1"}
+    * 
+    */
+    public void ButtonPressed()
+    { 
 		if (infix.Contains("Invalid")) {
             inputText.text = "";
             infix = "";
@@ -41,18 +41,18 @@ public class Calculator : MonoBehaviour {
         }
         string buttonValue = EventSystem.current.currentSelectedGameObject.name;
         if (buttonValue == "=" && infix != "") {
+            //if infix statement ended with a decimal, delete it to prevent errors
             if(infix[infix.Length-1] == '.') {
                 inputText.text = inputText.text.Substring(0, infix.Length - 1);
                 infix = infix.Substring(0, infix.Length - 1);
             }
-            if (!BracketMiss(infix)) {
+            //if there's an unequal amount of open/close parentheses, or if the last element is a operator, return "Invalid"
+            if (!BracketMiss(infix) || operatorPressed) {
                 infix = "Invalid";
                 inputText.text = "Invalid";
-            } else if (operatorPressed) {
-				infix = "Invalid";
-				inputText.text = "Invalid";
 			}else {
 				Stack <string> postFix = InfixToPostfix (infix);
+                //Not going to work with calculating Infinity to avoid potential errors
 				if (infix.Contains ("Infinity")) {
 					infix = "Invalid";
 					inputText.text = "Invalid";
@@ -61,21 +61,24 @@ public class Calculator : MonoBehaviour {
 					inputText.text = answer;
 					infix = answer;
 					operatorPressed = false;
-					oldAnswer = true;
+                    openBracket = false;
+                    oldAnswer = true;
 				}
 			}
+        //User Clear command
 		} else if (buttonValue == "C") {
 			inputText.text = "";
 			infix = "";
 			operatorPressed = false;
 			openBracket = false;
             oldAnswer = false;
-
-		} else {
+        //buttonValue must be number or operator
+        }else {
 			if (infix == "") {
 				if ("+*/^)".IndexOf (buttonValue) >= 0) {
 					infix = "Invalid";
 					inputText.text = "Invalid";
+                //the two possible operators we can assume a "0" in front of
 				} else if (buttonValue == "." || buttonValue == "-") {
 					inputText.text += "0" + buttonValue;
 					infix += "0" + buttonValue;
@@ -87,8 +90,9 @@ public class Calculator : MonoBehaviour {
 					openBracket = true;
 				} else {
                     if (buttonValue == "="){
-
+                        //if they press "=" on an empty field no need to do anything
                     }else{
+                        //getting this far means the buttonValue is a number
                         inputText.text += buttonValue;
                         infix += buttonValue;
                     }
@@ -96,12 +100,14 @@ public class Calculator : MonoBehaviour {
 			} else if (operatorPressed) {
                 if ("+-*/^.".IndexOf(buttonValue) >= 0)
                 {
+                    //if previous element was a decimal add a 0 after to avoid errors
                     if(infix[infix.Length-1] == '.')
                     {
                         inputText.text += "0";
                         infix += "0";
                     }
-                    if(infix[infix.Length - 1].Equals('(') && buttonValue == "-")
+                    //if we need to treat this as a "-" in the start of a new parentheses
+                    if (infix[infix.Length - 1].Equals('(') && buttonValue == "-")
                     {
                         inputText.text += "0" + buttonValue;
                         infix += "0" + buttonValue;
@@ -111,30 +117,29 @@ public class Calculator : MonoBehaviour {
                 {
                     if (buttonValue == ")")
                     {
+                        //if there's an empty parentheses pair with a operator before delete all 3 elements
                         if (infix.Length > 1) {
-                        inputText.text = inputText.text.Substring(0, infix.Length - 2);
-                        infix = infix.Substring(0, infix.Length - 2);
+                            inputText.text = inputText.text.Substring(0, infix.Length - 2);
+                            infix = infix.Substring(0, infix.Length - 2);
+                            openBracket = false;
                         }
                         else
                         {
-                            inputText.text = inputText.text.Substring(0, infix.Length - 1);
-                            infix = infix.Substring(0, infix.Length - 1);
+                            //empty parentheses is the only input, clear input
+                            infix = "";
+                            inputText.text = "";
+                            operatorPressed = false;
+                            openBracket = false;
                         }
                         if (infix.Length > 0)
                         {
+                            //after removing any potential empty parentheses pairs check for last element type
                             if ("-*/^.(".IndexOf(infix[infix.Length - 1]) >= 0)
                             {
                                 operatorPressed = true;
-
                             }
                             else
                             {
-                                if(infix[infix.Length - 1] == '*' && automaticTimes)
-                                {
-                                    inputText.text = inputText.text.Substring(0, infix.Length - 1);
-                                    infix = infix.Substring(0, infix.Length - 1);
-                                    oldAnswer = true;
-                                }
                                 operatorPressed = false;
                             }
                         }
@@ -152,7 +157,6 @@ public class Calculator : MonoBehaviour {
                         inputText.text += buttonValue;
                         infix += buttonValue;
                         operatorPressed = false;
-                        openBracket = false;
                     }
                 }
                 else if (buttonValue == "(")
@@ -175,7 +179,9 @@ public class Calculator : MonoBehaviour {
 					operatorPressed = false;
 				}
 			} else {
+                //last element was a number
 				if ("+-*/^".IndexOf (buttonValue) >= 0) {
+                    //if a operator is being added right after a decimal add a "0" after the decimal
                     if (infix[infix.Length - 1] == '.')
                     {
                         inputText.text += "0";
@@ -186,11 +192,10 @@ public class Calculator : MonoBehaviour {
 					operatorPressed = true;
                     oldAnswer = false;
                 }else{
-					if (oldAnswer) {
-						if (buttonValue == ")" && !openBracket) {
-
-						} else if (buttonValue != null) {
-							
+                    //the current element is a number, parentheses, or decimal
+                    if (oldAnswer) {
+                        if (buttonValue != null) {
+							//format for a new parentheses block
                             if (buttonValue == "(")
                             {
                                 if (infix[infix.Length - 1] == '.')
@@ -221,6 +226,7 @@ public class Calculator : MonoBehaviour {
                             oldAnswer = false;
 						}
 					} else {
+                        //format for a new parentheses block
                         if (buttonValue == "(")
                         {
                             if (infix[infix.Length - 1] == '.')
@@ -235,8 +241,20 @@ public class Calculator : MonoBehaviour {
                             operatorPressed = true;
                         }
                         else if (buttonValue != null) {
-                            inputText.text += buttonValue;
-							infix += buttonValue;
+                            //it's a number or decimal
+                            if (buttonValue != ".")
+                            {
+                                inputText.text += buttonValue;
+                                infix += buttonValue;
+                            }
+                            else
+                            {
+                                if (infix[infix.Length - 1] != '.')
+                                {
+                                    inputText.text += buttonValue;
+                                    infix += buttonValue;
+                                }
+                            }
 							operatorPressed = false;
 						}
 					}
@@ -246,8 +264,8 @@ public class Calculator : MonoBehaviour {
 		}
 			
     }
-
-	private bool BracketMiss(string possibleInfix){
+    //checks possibleInfix string for an uneven open to close parentheses, returns true if balaneced
+    private bool BracketMiss(string possibleInfix){
 		int open = 0;
 		int close = 0;
 		for (int i = 0; i < possibleInfix.Length; i++) {
@@ -263,13 +281,19 @@ public class Calculator : MonoBehaviour {
 		return false;
 	}
 
-
+    //takes a infix string, using two Stack <string> to create a postfix order
 	private Stack <string> InfixToPostfix(string infix)
 	{
 		Stack <string> postStack = new Stack <string> ();
 		Stack <string> operatorStack = new Stack <string> ();
+        //used to declare the base of operatorStack
 		operatorStack.Push ("B");
 		string number = "";
+
+        /*First each element is checked if it's a number,
+        * then special characters are checked,
+        * decimals are ignored after the first decimal in a number
+         */
 		for (int i = 0; i < infix.Length; i++) 
 		{
 			char currentElement = infix [i];
@@ -290,10 +314,7 @@ public class Calculator : MonoBehaviour {
                     {
                         number += currentElement;
                     }
-				}
-				if (operatorStack.Peek() == "B") {
-					operatorStack.Push (currentElement.ToString());
-				} else if (CompareOperators (operatorStack.Peek (), currentElement.ToString())) {
+                } if (currentElement != '.' && CompareOperators (operatorStack.Peek (), currentElement.ToString())) {
 					postStack.Push (operatorStack.Pop ());
 					operatorStack.Push (currentElement.ToString());
 				} else {
@@ -312,9 +333,7 @@ public class Calculator : MonoBehaviour {
 				}
 				while (operatorStack.Peek() != "B" && operatorStack.Peek () != "(") {
 					postStack.Push (operatorStack.Pop ());
-				}if (operatorStack.Peek() == "B") {
-
-                } else {
+				}if (operatorStack.Peek() != "B") {
 					operatorStack.Pop ();
 				}
 			}
@@ -332,6 +351,7 @@ public class Calculator : MonoBehaviour {
 		return operatorStack;
 	}
 
+    //operators are rated by mathmatical order, anything not "^+_*/" is given a value of 0, currently decimals are the only thing being ignored
 	private bool CompareOperators(string operator1, string operator2){
 		if(operator1 == "^" && operator2 == "^"){
 			return false;
@@ -345,6 +365,7 @@ public class Calculator : MonoBehaviour {
 		}
 	}
 
+    //given an operator, returns its mathmatical order
 	private int OperatorOrder(string oper){
 		if (oper == "+" || oper == "-") {
 			return 1;
@@ -358,11 +379,16 @@ public class Calculator : MonoBehaviour {
 		return 0;
 	}
 
+    /* Runs through postFix of strings
+     * if the string is a number it's converted into a float 
+     * else the string is used to determine the next operation
+     * to limit extreme calculations, power by is limited to 999 to -999
+    */
 	private string Calculate(Stack <string> postFix)
 	{
         Stack <float> numbers = new Stack<float> ();
-		while(postFix.Count > 0){
-
+        numbers.Push(0);
+        while (postFix.Count > 0){
 			string currentElement = postFix.Pop ();
             if ('0' <= currentElement[0] && currentElement[0] <= '9') {
                 numbers.Push(float.Parse(currentElement));
@@ -391,7 +417,7 @@ public class Calculator : MonoBehaviour {
                     float secondNumber = numbers.Pop();
                     float firstNumber = numbers.Pop();
                     float answer = 1;
-                    if (secondNumber < 54)
+                    if (secondNumber < 1000 && secondNumber > -1000)
                     {
                         if (secondNumber >= 0)
                         {
